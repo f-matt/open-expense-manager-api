@@ -9,7 +9,7 @@ class Credentials(BaseModel):
 
 app = FastAPI()
 
-@app.post("/login")
+@app.post("/api/login")
 async def login(credentials: Credentials):
     if credentials.username == "admin" and credentials.password == "123":
         return {"message" : "ok"}
