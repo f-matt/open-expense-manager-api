@@ -1,1 +1,4 @@
 fastapi[standard]
+argon2-cffi
+sqlmodel
+psycopg2-binary
