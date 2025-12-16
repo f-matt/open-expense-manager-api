@@ -1,4 +1,8 @@
 #!/bin/python
+import configparser
+import jwt
+
+from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Annotated
@@ -8,7 +12,12 @@ from sqlmodel import SQLModel, Field, Session, select
 
 from argon2 import PasswordHasher
 
-DATABASE_URL = "postgresql://oem:123456@localhost/oem"
+config = configparser.ConfigParser()
+config.read(".env")
+
+DATABASE_URL = config.get("OEM", "DATABASE_URL")
+JWT_SECRET = config.get("OEM", "JWT_SECRET")
+
 engine = create_engine(DATABASE_URL, echo=True)
 
 class User(SQLModel, table=True):
@@ -46,7 +55,13 @@ async def login(credentials: Credentials):
 
             ph = PasswordHasher()
             if ph.verify(users[0].password, credentials.password):
-                return {"message": "ok"}
+                access_exp = datetime.now() + timedelta(minutes=5)
+                refresh_exp = datetime.now() + timedelta(minutes=30)
+                access_jwt = jwt.encode({"username": credentials.username, "exp": access_exp}, JWT_SECRET,
+                                         algorithm="HS256")
+                refresh_jwt = jwt.encode({"username": credentials.username, "exp": refresh_exp}, JWT_SECRET,
+                                         algorithm="HS256")
+                return {"access": access_jwt, "refresh": refresh_jwt}
         except Exception as e:
             print(e)
 
