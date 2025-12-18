@@ -24,9 +24,10 @@
 
 import configparser
 import jwt
+import datetime
 
-from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException, Depends
+from fastapi.params import Header
 from pydantic import BaseModel
 from typing import Annotated
 
@@ -78,14 +79,26 @@ async def login(credentials: Credentials):
 
             ph = PasswordHasher()
             if ph.verify(users[0].password, credentials.password):
-                access_exp = datetime.now() + timedelta(minutes=5)
-                refresh_exp = datetime.now() + timedelta(minutes=30)
+                access_exp = datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=5)
+                refresh_exp = datetime.datetime.now(datetime.UTC) + datetime.timedelta(minutes=30)
                 access_jwt = jwt.encode({"username": credentials.username, "exp": access_exp}, JWT_SECRET,
                                          algorithm="HS256")
                 refresh_jwt = jwt.encode({"username": credentials.username, "exp": refresh_exp}, JWT_SECRET,
                                          algorithm="HS256")
                 return {"access": access_jwt, "refresh": refresh_jwt}
-        except Exception as e:
-            print(e)
+        except:
+            raise HTTPException(status_code=401, detail="Error authenticating user.")
 
     raise HTTPException(status_code=401, detail="Invalid username/password.")
+
+@app.get("/api/validate")
+async def validate(authorization: Annotated[str | None, Header()] = None):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authentication header missing.")
+
+    token = authorization.split()[1]
+    try:
+        jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        return {"valid": True}
+    except:
+        raise HTTPException(status_code=401, detail="Invalid authentication header.")
