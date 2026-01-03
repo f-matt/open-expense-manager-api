@@ -1,5 +1,3 @@
-#!/bin/python
-
 # The MIT License
 #
 # Copyright (c) 2025-2025 Fernando Mattioli
@@ -31,18 +29,20 @@ from fastapi.params import Header
 from pydantic import BaseModel
 from typing import Annotated
 
-from sqlalchemy import create_engine
 from sqlmodel import SQLModel, Field, Session, select
 
 from argon2 import PasswordHasher
 
+from db.config import get_engine
+
+from routers import expenses
+
 config = configparser.ConfigParser()
 config.read(".env")
 
-DATABASE_URL = config.get("OEM", "DATABASE_URL")
 JWT_SECRET = config.get("OEM", "JWT_SECRET")
 
-engine = create_engine(DATABASE_URL, echo=True)
+engine = get_engine()
 
 class User(SQLModel, table=True):
     __tablename__ = "users"
@@ -62,6 +62,12 @@ def get_session():
 SessionDep = Annotated[Session, Depends(get_session)]
 
 app = FastAPI()
+
+app.include_router(
+    expenses.router,
+    prefix="/api",
+    tags=["expenses"],
+)
 
 @app.post("/api/login")
 async def login(credentials: Credentials):
@@ -102,3 +108,5 @@ async def validate(authorization: Annotated[str | None, Header()] = None):
         return {"valid": True}
     except:
         raise HTTPException(status_code=401, detail="Invalid authentication header.")
+
+

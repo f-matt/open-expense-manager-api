@@ -11,3 +11,12 @@ CREATE TABLE users (
 
 INSERT INTO users (username, password)
 VALUES ('admin', '$argon2id$v=19$m=65536,t=3,p=4$M1eldHErkjbAaxNed8vbOQ$iXMKR6QzkAae5vBUgOMoOdvUV4BrpQ+mzesNwNS+l1g');
+
+CREATE TABLE expenses (
+    id SERIAL,
+    name VARCHAR (50) NOT NULL UNIQUE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    value DECIMAL (8, 2),
+    PRIMARY KEY (id)
+);
+
