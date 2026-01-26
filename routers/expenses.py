@@ -19,17 +19,23 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
+import logging
+
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException
-from sqlmodel import SQLModel, Field, Session
+from sqlmodel import SQLModel, Field, Session, select
 
 from db.config import get_engine
+
+logging.basicConfig(level=logging.ERROR)
+logger = logging.getLogger(__name__)
 
 class Expense(SQLModel, table=True):
     __tablename__ = "expenses"
     id: int | None = Field(default=None, primary_key=True)
     name: str
-    value: float | None
+    value: Optional[float]
     active: bool
 
 router = APIRouter()
@@ -39,8 +45,26 @@ engine = get_engine()
 async def insert_expense(expense: Expense):
     with Session(engine) as session:
         try:
-            new_expense = Expense(name=expense.name, value=expense.value, active=expense.active)
+            if expense.value:
+                print ("Has value")
+                new_expense = Expense(name=expense.name, value=expense.value, active=expense.active)
+            else:
+                print ("No value")
+                new_expense = Expense(name=expense.name, active=expense.active)
+
             session.add(new_expense)
             session.commit()
-        except:
+        except Exception as e:
+            print(e)
             raise HTTPException(status_code=400, detail="Error inserting expense data.")
+
+@router.get("/expenses")
+async def get_expenses():
+    with Session(engine) as session:
+        try:
+            statement = select(Expense)
+            results = session.exec(statement)
+            return results.all()
+        except Exception as e:
+            logger.exception("Error getting expenses", e)
+            raise HTTPException(status_code=400, detail="Error getting expenses.")
