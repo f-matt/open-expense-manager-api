@@ -19,41 +19,22 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
-
 import configparser
 
-from fastapi import FastAPI, Depends
-from typing import Annotated
+conf = None
 
-from sqlmodel import Session
+def load_config():
+    global conf
+    config = configparser.ConfigParser()
+    config.read(".env")
 
-from db.config import get_engine
+    conf = {
+        "database_url": config.get("OEM", "DATABASE_URL"),
+        "jwt_secret": config.get("OEM", "JWT_SECRET")
+    }
 
-from routers import expenses, auth
+def get_config():
+    if not conf:
+        load_config()
 
-config = configparser.ConfigParser()
-config.read(".env")
-
-JWT_SECRET = config.get("OEM", "JWT_SECRET")
-
-engine = get_engine()
-
-def get_session():
-    with Session(engine) as session:
-        yield session
-
-SessionDep = Annotated[Session, Depends(get_session)]
-
-app = FastAPI()
-
-app.include_router(
-    expenses.router,
-    prefix="/api/expenses",
-    tags=["expenses"],
-)
-
-app.include_router(
-    auth.router,
-    prefix="/api/auth",
-    tags=["auth"],
-)
+    return conf
