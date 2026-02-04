@@ -41,29 +41,27 @@ class Expense(SQLModel, table=True):
 router = APIRouter()
 engine = get_engine()
 
-@router.post("/expenses")
+@router.post("/")
 async def insert_expense(expense: Expense):
     with Session(engine) as session:
         try:
             if expense.value:
-                print ("Has value")
                 new_expense = Expense(name=expense.name, value=expense.value, active=expense.active)
             else:
-                print ("No value")
                 new_expense = Expense(name=expense.name, active=expense.active)
 
             session.add(new_expense)
             session.commit()
         except Exception as e:
-            print(e)
             raise HTTPException(status_code=400, detail="Error inserting expense data.")
 
-@router.get("/expenses")
+@router.get("/")
 async def get_expenses():
     with Session(engine) as session:
         try:
             statement = select(Expense)
             results = session.exec(statement)
+
             return results.all()
         except Exception as e:
             logger.exception("Error getting expenses", e)

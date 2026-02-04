@@ -48,12 +48,12 @@ app = FastAPI()
 
 app.include_router(
     expenses.router,
-    prefix="/api/expenses",
+    prefix="/expenses",
     tags=["expenses"],
 )
 
 app.include_router(
     auth.router,
-    prefix="/api/auth",
+    prefix="/auth",
     tags=["auth"],
 )
