@@ -52,14 +52,44 @@ async def insert_expense(expense: Expense):
 
             session.add(new_expense)
             session.commit()
-        except Exception as e:
+        except Exception:
+            session.rollback()
             raise HTTPException(status_code=400, detail="Error inserting expense data.")
+
+@router.patch("/")
+async def update_expense(expense: Expense):
+    if not expense:
+        raise HTTPException(status_code=422, detail="Must provide expense data.")
+
+    if not expense.id:
+        raise HTTPException(status_code=422, detail="Expense id not found.")
+
+    with Session(engine) as session:
+        try:
+            statement = select(Expense).where(Expense.id == expense.id)
+            e = session.exec(statement).one_or_none()
+
+            if not e:
+                raise HTTPException(status_code=422, detail="No expenses found with the provided id.")
+
+            e.value = expense.value
+            e.name = expense.name
+            e.active = expense.active
+
+            session.merge(e)
+            session.commit()
+        except HTTPException as e:
+            session.rollback()
+            raise e
+        except Exception:
+            session.rollback()
+            raise HTTPException(status_code=400, detail="Error updating expense data.")
 
 @router.get("/")
 async def get_expenses():
     with Session(engine) as session:
         try:
-            statement = select(Expense)
+            statement = select(Expense).order_by(Expense.name)
             results = session.exec(statement)
 
             return results.all()
