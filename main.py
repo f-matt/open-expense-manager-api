@@ -25,9 +25,10 @@ import configparser
 from fastapi import FastAPI, Depends
 from typing import Annotated
 
+from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session
 
-from db.config import get_engine
+from config.db import get_engine
 
 from routers import expenses, auth
 
@@ -45,6 +46,7 @@ def get_session():
 SessionDep = Annotated[Session, Depends(get_session)]
 
 app = FastAPI()
+
 
 app.include_router(
     expenses.router,

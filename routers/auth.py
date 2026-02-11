@@ -28,8 +28,8 @@ from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from sqlmodel import SQLModel, Field, Session, select
 
-from config.config import get_config
-from db.config import get_engine
+from config.db import get_engine
+from config.env import get_config
 
 import jwt
 

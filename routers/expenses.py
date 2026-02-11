@@ -21,12 +21,14 @@
 # THE SOFTWARE.
 import logging
 
-from typing import Optional
+from typing import Optional, Annotated
 
 from fastapi import APIRouter, HTTPException
+from fastapi.params import Depends
 from sqlmodel import SQLModel, Field, Session, select
 
-from db.config import get_engine
+from config.auth import oauth2_scheme
+from config.db import get_engine
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
@@ -86,7 +88,7 @@ async def update_expense(expense: Expense):
             raise HTTPException(status_code=400, detail="Error updating expense data.")
 
 @router.get("/")
-async def get_expenses():
+async def get_expenses(token: Annotated[str, Depends(oauth2_scheme)]):
     with Session(engine) as session:
         try:
             statement = select(Expense).order_by(Expense.name)
