@@ -33,8 +33,8 @@ from config.db import get_engine
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
-class Expense(SQLModel, table=True):
-    __tablename__ = "expenses"
+class RecurringExpense(SQLModel, table=True):
+    __tablename__ = "recurring_expenses"
     id: int | None = Field(default=None, primary_key=True)
     name: str
     value: Optional[float]
@@ -44,13 +44,13 @@ router = APIRouter()
 engine = get_engine()
 
 @router.post("/")
-async def insert_expense(expense: Expense):
+async def insert_expense(expense: RecurringExpense):
     with Session(engine) as session:
         try:
             if expense.value:
-                new_expense = Expense(name=expense.name, value=expense.value, active=expense.active)
+                new_expense = RecurringExpense(name=expense.name, value=expense.value, active=expense.active)
             else:
-                new_expense = Expense(name=expense.name, active=expense.active)
+                new_expense = RecurringExpense(name=expense.name, active=expense.active)
 
             session.add(new_expense)
             session.commit()
@@ -59,7 +59,7 @@ async def insert_expense(expense: Expense):
             raise HTTPException(status_code=400, detail="Error inserting expense data.")
 
 @router.patch("/")
-async def update_expense(expense: Expense):
+async def update_expense(expense: RecurringExpense):
     if not expense:
         raise HTTPException(status_code=422, detail="Must provide expense data.")
 
@@ -68,7 +68,7 @@ async def update_expense(expense: Expense):
 
     with Session(engine) as session:
         try:
-            statement = select(Expense).where(Expense.id == expense.id)
+            statement = select(RecurringExpense).where(RecurringExpense.id == expense.id)
             e = session.exec(statement).one_or_none()
 
             if not e:
@@ -91,7 +91,7 @@ async def update_expense(expense: Expense):
 async def get_expenses(token: Annotated[str, Depends(oauth2_scheme)]):
     with Session(engine) as session:
         try:
-            statement = select(Expense).order_by(Expense.name)
+            statement = select(RecurringExpense).order_by(RecurringExpense.name)
             results = session.exec(statement)
 
             return results.all()

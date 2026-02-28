@@ -25,12 +25,11 @@ import configparser
 from fastapi import FastAPI, Depends
 from typing import Annotated
 
-from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session
 
 from config.db import get_engine
 
-from routers import expenses, auth
+from routers import recurring_expenses, auth
 
 config = configparser.ConfigParser()
 config.read(".env")
@@ -49,7 +48,7 @@ app = FastAPI()
 
 
 app.include_router(
-    expenses.router,
+    recurring_expenses.router,
     prefix="/expenses",
     tags=["expenses"],
 )
