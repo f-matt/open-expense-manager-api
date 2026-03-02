@@ -19,48 +19,16 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
+from sqlmodel import SQLModel, Field, Relationship
 
-import configparser
-
-from fastapi import FastAPI, Depends
-from typing import Annotated
-
-from sqlmodel import Session
-
-from config.db import get_engine
-
-from routers import recurring_expenses, auth, monthly_expenses
-
-config = configparser.ConfigParser()
-config.read(".env")
-
-JWT_SECRET = config.get("OEM", "JWT_SECRET")
-
-engine = get_engine()
-
-def get_session():
-    with Session(engine) as session:
-        yield session
-
-SessionDep = Annotated[Session, Depends(get_session)]
-
-app = FastAPI()
+from models.monthly_expenses import MonthlyExpenses
 
 
-app.include_router(
-    recurring_expenses.router,
-    prefix="/expenses",
-    tags=["expenses"],
-)
+class Expense(SQLModel, table=True):
+    __tablename__ = "expenses"
+    id: int | None = Field(default=None, primary_key=True)
+    value: float
+    recurring_expense_id: int = Field(foreign_key="recurring_expenses.id")
+    monthly_expense_id: int = Field(foreign_key="monthly_expenses.id")
 
-app.include_router(
-    auth.router,
-    prefix="/auth",
-    tags=["auth"],
-)
-
-app.include_router(
-    monthly_expenses.router,
-    prefix="/monthly-expenses",
-    tags=["monthly-expenses"],
-)
+    monthly_expenses: MonthlyExpenses = Relationship(back_populates="expenses")
